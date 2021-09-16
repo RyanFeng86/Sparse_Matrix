@@ -1,11 +1,17 @@
 ﻿#include <iostream>
 #include <string>
-#include <cuda_runtime.h>
-#include <stdio.h>
 #include <vector>
-#include <windows.h>
+
+#include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
+#include <math.h>
+#include <windows.h>
+//CUDA RunTime API
+#include <cuda_runtime.h>
+#include <cuda.h>
 #include "multi_kernel.cuh"
+
 using namespace std;
 
 
@@ -55,6 +61,8 @@ private:
 	T **cuda_filter;
 	T **cuda_input;
 	T **cuda_output;
+
+	cudaEvent_t start, stop;
 };
 
 template<class T>
@@ -128,13 +136,20 @@ con_mul<T>::con_mul(int a, int b, int c, int d, int e, sparsity y, cal_model z) 
 
 	
 
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+
 }
 
 void printDeviceProp(const cudaDeviceProp &prop)
 {
 	printf("Device Name : %s.\n", prop.name); //device ASCII name
-	printf("totalGlobalMem : %ld.\n", prop.totalGlobalMem); //Total available  memoery in Byte
-	printf("sharedMemPerBlock : %d.\n", prop.sharedMemPerBlock); //maximum memory for each thread on GPU
+	//printf("totalGlobalMem : %ld.\n", prop.totalGlobalMem); //Total available  memoery in Byte
+	cout <<"totalGlobalMem: "<< prop.totalGlobalMem/(1024*1024*1024)<<" GB" << endl;
+	//printf("sharedMemPerBlock : %d.\n", prop.sharedMemPerBlock); //maximum memory for each thread on GPU
+	cout << "sharedMemPerBlock: " << prop.sharedMemPerBlock / (1024) << " KB" << endl;
+	//printf("totalConstMem : %d.\n", prop.totalConstMem); //total const memory 
+	cout << "totalConstMem: " << prop.totalConstMem / (1024) << " KB" << endl;
 	printf("regsPerBlock : %d.\n", prop.regsPerBlock); //maximum 32bit register number for block
 	printf("warpSize : %d.\n", prop.warpSize); //warp size
 	printf("memPitch : %d.\n", prop.memPitch); // the farest distance for cudaMalloc 
@@ -142,7 +157,7 @@ void printDeviceProp(const cudaDeviceProp &prop)
 	printf("maxBlocksPerMultiProcessor : %d.\n", prop.maxBlocksPerMultiProcessor);//maximum block number in each processor
 	printf("maxThreadsDim[0 - 2] : %d %d %d.\n", prop.maxThreadsDim[0], prop.maxThreadsDim[1], prop.maxThreadsDim[2]); //maximum value for each thread dimension
 	printf("maxGridSize[0 - 2] : %d %d %d.\n", prop.maxGridSize[0], prop.maxGridSize[1], prop.maxGridSize[2]); //maximum value for each grid dimension
-	printf("totalConstMem : %d.\n", prop.totalConstMem); //total const memory 
+	
 	printf("major.minor : %d.%d.\n", prop.major, prop.minor); //major and minor number
 	printf("clockRate : %d.\n", prop.clockRate); // clock rate in KHz
 	printf("textureAlignment : %d.\n", prop.textureAlignment); //
@@ -331,7 +346,7 @@ void con_mul<T>::kernel_CPU() {
 			}
 		}		
 	}
-	CPU_time.push_back(GetTickCount() - k);
+	CPU_time.push_back((GetTickCount() - k)*1000);
 	
 	//display output tmp
 	cout << endl;
@@ -356,7 +371,9 @@ void con_mul<T>::kernel_GPU() {
 	
 	if (model == normal_GPU) {
 	////////////////////////////////////////
-		//allocate filter memory in GPU and init its value 		
+		
+
+		//allocate filter memory in GPU and init its value 			
 		T **host_2d_filter = new T *[filter_num];		
 		for (int i = 0; i < filter_num; i++) {
 			T *host_1d=new T [filter_size*filter_size*channel_num];
@@ -408,33 +425,32 @@ void con_mul<T>::kernel_GPU() {
 		delete[] host_2d_output;
 
 		//starting tick here
-		cudaEvent_t start, stop;
-		float elapsedTime;
-		cudaEventCreate(&start);		
-		cudaEventRecord(start, 0);
+		
+		//float elapsedTime;
+		//cudaEventCreate(&start);
+		//cudaEventRecord(start, 0);
 
-
+		
+		
+		//cudaEventSynchronize(stop);
 		//Functionname<<<block number, thread number, share memory size>>>(variable…)
-		dim3 grid(filter_num, 1, 1), block(filter_size*filter_size*channel_num, 1, 1);
-		Mult_normal <<< grid, block >>> (cuda_filter,cuda_input, cuda_output,filter_num,filter_size,channel_num,input_hight,input_width);
-
-		//end tock here
-		cudaEventCreate(&stop);
+		cudaEventRecord(start, 0);		
+		dim3 grid(filter_num, 1, 1), block(filter_size*filter_size*channel_num, 1, 1);	
+		Mult_normal <<< grid, block >>> (cuda_filter, cuda_input, cuda_output, filter_num, filter_size, channel_num, input_hight, input_width);
 		cudaEventRecord(stop, 0);
 		cudaEventSynchronize(stop);		
-		cudaEventElapsedTime(&elapsedTime, start, stop);
-		
-		cudaEventDestroy(start);
-		cudaEventDestroy(stop);
-		GPU_time.push_back(elapsedTime*1000);
-
-
+		float time_elapsed = 0;
+		cudaEventElapsedTime(&time_elapsed, start, stop);		
+		GPU_time.push_back(time_elapsed * 1000);
 
 		//copy result from GMEM to MEM
 		//host_2d_output = new T *[filter_num];
 		//cudaMemcpy(host_2d_output, cuda_output, sizeof(T *)*filter_num, cudaMemcpyDeviceToHost);
 		
 		cudaMemcpy(output_tmp, cuda_output, sizeof(T)*filter_num*input_width*input_hight, cudaMemcpyDeviceToHost);
+
+		
+
 		cout << "*****************************" << endl;
 		cout << "The following is GPU result:" << endl;
 		for (int i = 0; i < filter_num; i++) {
@@ -446,11 +462,12 @@ void con_mul<T>::kernel_GPU() {
 		
 		//release cuda mem on
 		//cuda_filter
-		
 
 		cudaFree(cuda_filter);
 		cudaFree(cuda_input);
 		cudaFree(cuda_output);
+
+		
 		
 		
 
@@ -486,17 +503,19 @@ template<class T>
 void con_mul<T>::deal_with_time() {
 	cout << "CPU time:" << endl;
 	for (int i = 0; i < CPU_time.size(); i++)
-		cout << CPU_time[i]<<"ms" << endl;
+		printf("%f us\n", CPU_time[i]);
+		//cout << CPU_time[i]<<"ms" << endl;
 
-	cout << "GPU time:" << endl;
+	cout <<endl<< "GPU time:" << endl;
 	for (int i = 0; i < GPU_time.size(); i++)
-		cout << GPU_time[i]<<"ms" << endl;
+		printf("%f us\n", GPU_time[i]);
+		//cout << GPU_time[i]<<"ms" << endl;
 }
 
 
 int main() {
 	cout << "good afternoon" << endl;
-	con_mul<double> pray_no_bug(4, 50, 1, 10, 10, two_four, normal_GPU);
+	con_mul<int> pray_no_bug(3, 512, 1, 2, 2, two_four, normal_GPU);
 	//filter size, channel number, filter number, input hight
 	// input width, matrix sparsity, model
 
@@ -510,8 +529,15 @@ int main() {
 		pray_no_bug.kernel_CPU();
 	pray_no_bug.output_transform();
 
+	//for(int i=0;i<10;i++)
+	
+	
+	
 	for(int i=0;i<10;i++)
 		pray_no_bug.kernel_GPU();
+	
+	
+
 	pray_no_bug.output_transform();
 	//prepare output
 

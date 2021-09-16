@@ -1,15 +1,15 @@
-﻿#include <iostream>
-#include <string>
+﻿
 #include <cuda_runtime.h>
 #include <stdio.h>
-#include <vector>
+
+
 
 
 template<class T>
-__global__ void Mult_normal(T **cuda_filter, T **cuda_input, T **cuda_output, int filter_num, int filter_size, int channel_num, int input_hight, int input_width) {
+ __global__ void Mult_normal(T **cuda_filter, T **cuda_input, T **cuda_output, int filter_num, int filter_size, int channel_num, int input_hight, int input_width) {
 	int bid = blockIdx.x;
 	int locIdx = threadIdx.x;
-	int globIdx = blockIdx.x*blockDim.x + threadIdx.x;
+	//int globIdx = blockIdx.x*blockDim.x + threadIdx.x;
 
 	//each block will creat one share memory strip for each row of filter array
 	__shared__ T *filter;
@@ -22,6 +22,7 @@ __global__ void Mult_normal(T **cuda_filter, T **cuda_input, T **cuda_output, in
 	}
 
 	//__syncthreads();
+
 
 	if (locIdx < blockDim.x) {
 		for (int i = 0; i < input_hight*input_width; i++) {
@@ -41,6 +42,9 @@ __global__ void Mult_normal(T **cuda_filter, T **cuda_input, T **cuda_output, in
 			//__syncthreads();
 		}
 	}
+	delete[] filter;
+	delete[] result;
+	
 }
 
 
