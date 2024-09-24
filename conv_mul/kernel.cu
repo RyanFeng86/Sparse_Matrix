@@ -3,7 +3,6 @@
 #include <cuda_runtime.h>
 #include <stdio.h>
 #include <vector>
-#include <windows.h>
 #include <time.h>
 #include "multi_kernel.cuh"
 using namespace std;
