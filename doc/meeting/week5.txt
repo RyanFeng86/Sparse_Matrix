@@ -1,0 +1,19 @@
+1. In the past two weeks, I am mainly modifying and debugging the code and read the tool manual. I've finished one to four and one to eight sparse matrix multiplication on cuda. And I've got as much measurement data as possible.
+
+2. This is two-to-four sparse matrix multiplication. I've added two columns of standard deviation.
+
+3. This is one-to-four sparse matrix multiplication.
+
+4. And this is one-to-eight.
+As for the normal multiplication, when the matrix size is small, the more sparse the matrxi is, the less time it will consume. When the matrix becomes larger and larger, this difference is not obvious.
+
+As fot the improve multiplication, the more sparse the matrix is, the less time it will consume. And the difference is obvious.
+
+Compare the normal method with the improve method, the improve one consume less time, especially when the matrix is large. 
+
+There is no stander deviation that larger then 0.8 for normal method and 0.7 for the improve method. And the stander deviation is kind of random.
+
+The paper implies that if it is too sparse, the accuracy will decrease
+
+5. And I tried to use cuda sparse toolkit to realize sparse matrix multiplication. But after I improted the head file and lib file, I cannot successfully compile the sample code. And it always report unresolved external symbol. I try to solve it in many different ways, but no one helps.
+

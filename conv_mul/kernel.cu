@@ -3,7 +3,7 @@
 #include <cuda_runtime.h>
 #include <stdio.h>
 #include <vector>
-#include <time.h>
+#include <ctime>
 #include "multi_kernel.cuh"
 using namespace std;
 
@@ -148,6 +148,8 @@ void printDeviceProp(const cudaDeviceProp &prop)
 	printf("deviceOverlap : %d.\n", prop.deviceOverlap);
 	printf("multiProcessorCount : %d.\n", prop.multiProcessorCount); //processors number on the device
 }
+
+
 template<class T>
 bool con_mul<T>::gpu_info() {
 	int count;
@@ -158,8 +160,7 @@ bool con_mul<T>::gpu_info() {
 		fprintf(stderr, "There is no device.\n");
 		return false;
 	}
-	int i;
-	for (i = 0; i < count; i++)
+	for (int i = 0; i < count; i++)
 	{
 		cudaDeviceProp prop;
 		cudaGetDeviceProperties(&prop, i);
@@ -322,7 +323,7 @@ void con_mul<T>::kernel_CPU() {
 		for (int j = 0; j <input_hight*input_width; j++)
 			output_tmp[i][j]=0;
 
-	double k = GetTickCount();
+	//double k = time();
 	for (int k = 0; k < input_hight*input_width; k++) {
 		for (int i = 0; i < filter_num; i++) {
 			for (int j = 0; j < filter_size*filter_size*channel_num; j++) {
@@ -330,7 +331,7 @@ void con_mul<T>::kernel_CPU() {
 			}
 		}		
 	}
-	CPU_time.push_back(GetTickCount() - k);
+	//CPU_time.push_back(time() - k);
 	
 	//display output tmp
 	cout << endl;
@@ -504,11 +505,12 @@ int main() {
 	pray_no_bug.matrix_generation();
 	pray_no_bug.matrix_transform();
 
-	//calculation
+	//calculate on cpu
 	for(int i=0;i<10;i++)
 		pray_no_bug.kernel_CPU();
 	pray_no_bug.output_transform();
 
+	//calculate on GPU
 	for(int i=0;i<10;i++)
 		pray_no_bug.kernel_GPU();
 	pray_no_bug.output_transform();
