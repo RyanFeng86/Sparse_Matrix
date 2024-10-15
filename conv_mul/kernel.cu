@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
-#include <windows.h>
 #include <chrono>
 #include <ctime>
 //CUDA RunTime API
@@ -26,27 +25,27 @@ public:
 	void end_tok();
 	double getTime();
 private:
-	LARGE_INTEGER begin;
-	LARGE_INTEGER stop;
-	LARGE_INTEGER frequency;
+	// LARGE_INTEGER begin;
+	// LARGE_INTEGER stop;
+	// LARGE_INTEGER frequency;
 };
 
-tictock::tictock() {	
-		begin.QuadPart = 0;
-		stop.QuadPart = 0;
-		QueryPerformanceFrequency(&frequency);
-}
-void tictock::start_tic() {
-	QueryPerformanceCounter(&begin);
-};
-void tictock::end_tok() {	
-		QueryPerformanceCounter(&stop);	
-}
-double tictock::getTime() {
-	LARGE_INTEGER time;
-	time.QuadPart = stop.QuadPart - begin.QuadPart;
-	return (double)time.QuadPart / (double)frequency.QuadPart*1000000;
-}
+// tictock::tictock() {	
+// 		begin.QuadPart = 0;
+// 		stop.QuadPart = 0;
+// 		QueryPerformanceFrequency(&frequency);
+// }
+// void tictock::start_tic() {
+// 	QueryPerformanceCounter(&begin);
+// };
+// void tictock::end_tok() {	
+// 		QueryPerformanceCounter(&stop);	
+// }
+// double tictock::getTime() {
+// 	LARGE_INTEGER time;
+// 	time.QuadPart = stop.QuadPart - begin.QuadPart;
+// 	return (double)time.QuadPart / (double)frequency.QuadPart*1000000;
+// }
 
 
 
@@ -66,8 +65,7 @@ public:
 	void kernel_GPU();
 	void output_transform();
 	void deal_with_time();
-	vector<double> CPU_time;
-	vector<double> GPU_time;
+
 
 private:
 	int filter_size;
@@ -390,8 +388,7 @@ void con_mul<T>::kernel_CPU() {
 			output_tmp[i][j] = 0;
 
 	//calculation part
-	tictock time;
-	time.start_tic();
+	
 
 	if (model == normal_GPU) {
 		/*
@@ -431,8 +428,7 @@ void con_mul<T>::kernel_CPU() {
 			}
 		}
 	}	
-	time.end_tok();	
-	CPU_time.push_back(time.getTime());
+
 	//display output tmp
 	/*
 	cout << endl;
@@ -691,7 +687,7 @@ void con_mul<T>::kernel_GPU() {
 template<class T>
 void con_mul<T>::output_transform() {
 	cout << "The following is reshaped results" << endl;
-	/*
+	
 	for (int i = 0; i < filter_num; i++) {
 		for (int j = 0; j < input_hight; j++) {
 			for (int m = 0; m < input_width; m++) {
@@ -702,92 +698,92 @@ void con_mul<T>::output_transform() {
 		}
 		cout << endl;
 	}
-	*/
+	
 }
 
 
 template<class T>
 void con_mul<T>::deal_with_time() {
-	double max = INT_MIN, min = INT_MAX; 
-	int max_ = 1, min_ = 1;
-	double ave=0,std=0;	
-	double sum = 0;
-	cout << "CPU time:" << endl;
-	for (int i = 0; i < CPU_time.size(); i++) {
-		cout << CPU_time[i] << "us" << endl;
-		if (CPU_time[i] > max)
-			max = CPU_time[i];
-		if (CPU_time[i] < min)
-			min = CPU_time[i];
-	}
-	for (int i = 0; i < CPU_time.size(); i++) {
-		if (max_ == 1 && CPU_time[i] >= max-0.0001) {
-			max_--;
-		}
-		else if (min_ == 1 && CPU_time[i] <= min+0.0001) {
-			min_--;
-		}
-		else {
-			sum += CPU_time[i];
-		}
-	}		
-	ave = sum / (CPU_time.size()-2);
-	cout << "CPU time Ave: " << ave <<"us"<< endl;
+	// double max = INT_MIN, min = INT_MAX; 
+	// int max_ = 1, min_ = 1;
+	// double ave=0,std=0;	
+	// double sum = 0;
+	// cout << "CPU time:" << endl;
+	// for (int i = 0; i < CPU_time.size(); i++) {
+	// 	cout << CPU_time[i] << "us" << endl;
+	// 	if (CPU_time[i] > max)
+	// 		max = CPU_time[i];
+	// 	if (CPU_time[i] < min)
+	// 		min = CPU_time[i];
+	// }
+	// for (int i = 0; i < CPU_time.size(); i++) {
+	// 	if (max_ == 1 && CPU_time[i] >= max-0.0001) {
+	// 		max_--;
+	// 	}
+	// 	else if (min_ == 1 && CPU_time[i] <= min+0.0001) {
+	// 		min_--;
+	// 	}
+	// 	else {
+	// 		sum += CPU_time[i];
+	// 	}
+	// }		
+	// ave = sum / (CPU_time.size()-2);
+	// cout << "CPU time Ave: " << ave <<"us"<< endl;
 	
-	max_ = 1; min_ = 1;
-	for (int i = 0; i < CPU_time.size(); i++) {
-		if (max_ == 1 && CPU_time[i] >= max-0.0001) {			
-			max_--;
-		} 
-		else if (min_ == 1 && CPU_time[i] <= min+0.0001) {			
-			min_--;
-		}
-		else {
-			std += (CPU_time[i] - ave)*(CPU_time[i] - ave);
-		}
-	}
-	std = sqrt(std / (CPU_time.size() - 3));
-	cout << "CPU time std: " << std <<"us"<< endl;
+	// max_ = 1; min_ = 1;
+	// for (int i = 0; i < CPU_time.size(); i++) {
+	// 	if (max_ == 1 && CPU_time[i] >= max-0.0001) {			
+	// 		max_--;
+	// 	} 
+	// 	else if (min_ == 1 && CPU_time[i] <= min+0.0001) {			
+	// 		min_--;
+	// 	}
+	// 	else {
+	// 		std += (CPU_time[i] - ave)*(CPU_time[i] - ave);
+	// 	}
+	// }
+	// std = sqrt(std / (CPU_time.size() - 3));
+	// cout << "CPU time std: " << std <<"us"<< endl;
 
 
-	cout <<endl<< "GPU time:" << endl;
-	max_ = 1; min_ = 1; max = INT_MIN; min = INT_MAX;
-	ave = 0, std = 0;
-	sum = 0;
-	for (int i = 0; i < GPU_time.size(); i++) {
-		cout << GPU_time[i] << "us" << endl;
-		if (GPU_time[i] > max)
-			max = GPU_time[i];
-		if (GPU_time[i] < min)
-			min = GPU_time[i];
-	}
-	for (int i = 0; i < GPU_time.size(); i++) {
-		if (max_ == 1 && GPU_time[i] >= max-0.0001) {
-			max_--;
-		}
-		else if (min_ == 1 && GPU_time[i] <= min+0.0001) {
-			min_--;
-		}
-		else {
-			sum += GPU_time[i];
-		}
-	}
-	ave = sum / (GPU_time.size() - 2);
-	cout << "GPU time Ave: " << ave <<"us"<< endl;
-	max_ = 1; min_ = 1;
-	for (int i = 0; i <GPU_time.size(); i++) {
-		if (max_ == 1 && GPU_time[i] >= max-0.0001) {
-			max_--;
-		}
-		else if (min_ == 1 && GPU_time[i] <= min+0.0001) {
-			min_--;
-		}
-		else {
-			std += (GPU_time[i] - ave)*(GPU_time[i] - ave);
-		}
-	}
-	std = sqrt(std / (GPU_time.size() - 3));
-	cout << "GPU time std: " << std <<"us"<< endl;
+	// cout <<endl<< "GPU time:" << endl;
+	// max_ = 1; min_ = 1; max = INT_MIN; min = INT_MAX;
+	// ave = 0, std = 0;
+	// sum = 0;
+	// for (int i = 0; i < GPU_time.size(); i++) {
+	// 	cout << GPU_time[i] << "us" << endl;
+	// 	if (GPU_time[i] > max)
+	// 		max = GPU_time[i];
+	// 	if (GPU_time[i] < min)
+	// 		min = GPU_time[i];
+	// }
+	// for (int i = 0; i < GPU_time.size(); i++) {
+	// 	if (max_ == 1 && GPU_time[i] >= max-0.0001) {
+	// 		max_--;
+	// 	}
+	// 	else if (min_ == 1 && GPU_time[i] <= min+0.0001) {
+	// 		min_--;
+	// 	}
+	// 	else {
+	// 		sum += GPU_time[i];
+	// 	}
+	// }
+	// ave = sum / (GPU_time.size() - 2);
+	// cout << "GPU time Ave: " << ave <<"us"<< endl;
+	// max_ = 1; min_ = 1;
+	// for (int i = 0; i <GPU_time.size(); i++) {
+	// 	if (max_ == 1 && GPU_time[i] >= max-0.0001) {
+	// 		max_--;
+	// 	}
+	// 	else if (min_ == 1 && GPU_time[i] <= min+0.0001) {
+	// 		min_--;
+	// 	}
+	// 	else {
+	// 		std += (GPU_time[i] - ave)*(GPU_time[i] - ave);
+	// 	}
+	// }
+	// std = sqrt(std / (GPU_time.size() - 3));
+	// cout << "GPU time std: " << std <<"us"<< endl;
 
 		
 }
@@ -814,12 +810,12 @@ int main() {
 	
 	
 	for (int i = 0; i < 10; i++) {
-		tictock timer;
-		timer.start_tic();
+		// tictock timer;
+		// timer.start_tic();
 		pray_no_bug.kernel_GPU();
 		
-		timer.end_tok();
-		pray_no_bug.GPU_time.push_back(timer.getTime());
+		// timer.end_tok();
+		// pray_no_bug.GPU_time.push_back(timer.getTime());
 		
 	}
 		
@@ -829,7 +825,7 @@ int main() {
 	pray_no_bug.output_transform();
 	//prepare output
 
-	pray_no_bug.deal_with_time();
+	//pray_no_bug.deal_with_time();
 
 	return 0;
 
